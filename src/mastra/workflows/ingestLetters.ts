@@ -5,19 +5,17 @@ import { z } from "zod";
 import { embed } from "ai";
 import { google } from "@ai-sdk/google";
 import { pool } from "../db.js";
-
 import { createStep, createWorkflow } from "@mastra/core/workflows";
 
 const require = createRequire(import.meta.url);
-
-// pdf-parse CommonJS import (stable)
 const pdfParse: (buffer: Buffer) => Promise<{ text: string }> = require("pdf-parse");
 
 const LETTERS_DIR = path.join(process.cwd(), "data", "letters");
 
 /* ---------- helpers ---------- */
 
-function chunkText(text: string, chunkSize = 1000, overlap = 200) {
+function chunkText(text: string, chunkSize = 500, overlap = 100)
+ {
   const chunks: string[] = [];
   let start = 0;
 
@@ -28,6 +26,16 @@ function chunkText(text: string, chunkSize = 1000, overlap = 200) {
   }
 
   return chunks;
+}
+
+// ✅ Correct pgvector formatter
+function toPgVector(vec: number[]): string {
+  if (!Array.isArray(vec) || vec.length === 0) {
+    throw new Error("Invalid embedding vector");
+  }
+
+  const clean = vec.map(v => Number(v).toString());
+  return `[${clean.join(",")}]`;
 }
 
 /* ---------- schemas ---------- */
@@ -54,13 +62,11 @@ const loadPdfs = createStep({
   outputSchema: z.array(pdfFileSchema),
 
   execute: async () => {
-    const files = fs.readdirSync(LETTERS_DIR).filter((f) => f.endsWith(".pdf"));
+    const files = fs.readdirSync(LETTERS_DIR).filter(f => f.endsWith(".pdf"));
 
-    if (!files.length) {
-      throw new Error("No PDF files found in data/letters");
-    }
+    if (!files.length) throw new Error("No PDF files found in data/letters");
 
-    return files.map((file) => ({
+    return files.map(file => ({
       file,
       filePath: path.join(LETTERS_DIR, file),
     }));
@@ -76,7 +82,7 @@ const parsePdfs = createStep({
   execute: async ({ inputData }) => {
     if (!inputData) throw new Error("No input PDFs provided");
 
-    const docs: { filename: string; text: string }[] = [];
+    const docs = [];
 
     for (const item of inputData) {
       const buffer = fs.readFileSync(item.filePath);
@@ -92,10 +98,6 @@ const parsePdfs = createStep({
   },
 });
 
-function toPgVector(arr: number[]): string {
-  return `[${arr.join(",")}]`;
-}
-
 const embedAndStore = createStep({
   id: "embed-and-store",
   description: "Chunks, embeds, and stores documents into Postgres (pgvector)",
@@ -104,9 +106,6 @@ const embedAndStore = createStep({
 
   execute: async ({ inputData }) => {
     if (!inputData) throw new Error("No parsed documents provided");
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
-    }
 
     let totalInserted = 0;
 
@@ -117,12 +116,11 @@ const embedAndStore = createStep({
       const chunks = chunkText(doc.text);
 
       for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
+        const chunk = chunks[i].trim();
+        if (!chunk) continue;
 
         const embeddingResult = await embed({
-          model: google.embedding("text-embedding-004", {
-            apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
-          }),
+          model: google.embedding("text-embedding-004"),
           value: chunk,
         });
 
@@ -154,8 +152,6 @@ const embedAndStore = createStep({
     return { inserted: totalInserted };
   },
 });
-
-
 
 /* ---------- workflow ---------- */
 
