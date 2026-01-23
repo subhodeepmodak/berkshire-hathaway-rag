@@ -1,27 +1,73 @@
-# Berkshire
+# 📊 Berkshire Hathaway Shareholder Letters RAG System
 
-Welcome to your new [Mastra](https://mastra.ai/) project! We're excited to see what you'll build.
+A production-grade **Retrieval-Augmented Generation (RAG)** system built using **Mastra**, **PostgreSQL + pgvector**, and **Google Gemini embeddings** to answer questions strictly from Berkshire Hathaway shareholder letters with full citation support.
 
-## Getting Started
+---
 
-Start the development server:
+## 🚀 Features
 
-```shell
-npm run dev
-```
+- 📄 PDF ingestion & chunking pipeline  
+- 🧠 Vector embeddings using `text-embedding-004` (Gemini)  
+- 🗄️ PostgreSQL + pgvector semantic storage  
+- 🔎 Hybrid retrieval (vector similarity + full-text search)  
+- 🤖 Grounded AI agent with tool-forced retrieval  
+- 📌 Source-aware answers with citations (year + filename)  
+- 🧵 Memory + thread support via Mastra  
+- 🧪 Mastra Studio UI for debugging and testing
 
-Open [http://localhost:4111](http://localhost:4111) in your browser to access [Mastra Studio](https://mastra.ai/docs/getting-started/studio). It provides an interactive UI for building and testing your agents, along with a REST API that exposes your Mastra application as a local service. This lets you start building without worrying about integration right away.
+---
 
-You can start editing files inside the `src/mastra` directory. The development server will automatically reload whenever you make changes.
+## 🧱 Architecture Overview
 
-## Learn more
+PDF Letters
+│
+▼
+PDF Parser
+│
+▼
+Chunking
+│
+▼
+Gemini Embeddings
+│
+▼
+Postgres (pgvector)
+│
+▼
+Hybrid Search Tool
+│
+▼
+Berkshire Agent (Mastra)
+│
+▼
+Cited Answer
 
-To learn more about Mastra, visit our [documentation](https://mastra.ai/docs/). Your bootstrapped project includes example code for [agents](https://mastra.ai/docs/agents/overview), [tools](https://mastra.ai/docs/agents/using-tools), [workflows](https://mastra.ai/docs/workflows/overview), [scorers](https://mastra.ai/docs/evals/overview), and [observability](https://mastra.ai/docs/observability/overview).
+---
 
-If you're new to AI agents, check out our [course](https://mastra.ai/course) and [YouTube videos](https://youtube.com/@mastra-ai). You can also join our [Discord](https://discord.gg/BTYqqHKUrf) community to get help and share your projects.
+## 🛠️ Tech Stack
 
-## Deploy on Mastra Cloud
+- Mastra – Agent orchestration & workflows
+- PostgreSQL (Neon) – Database
+- pgvector – Vector similarity search
+- Google Gemini API – Embeddings + LLM
+- TypeScript
+- pdf-parse
+- Zod
 
-[Mastra Cloud](https://cloud.mastra.ai/) gives you a serverless agent environment with atomic deployments. Access your agents from anywhere and monitor performance. Make sure they don't go off the rails with evals and tracing.
+---
 
-Check out the [deployment guide](https://mastra.ai/docs/deployment/overview) for more details.
+## 📂 Project Structure
+
+src/
+agents/
+berkshire-agent.ts
+weather-agent.ts
+tools/
+berkshire-search.ts
+weather-tool.ts
+workflows/
+ingest-letters.ts
+db.ts
+
+data/
+letters/ ← PDF shareholder letters
